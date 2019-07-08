@@ -1,6 +1,5 @@
 package com.imooc.spring.reactive.loader;
 
-import java.util.ArrayList;
 import java.util.concurrent.*;
 
 /**
@@ -9,24 +8,33 @@ import java.util.concurrent.*;
  * @author 小马哥
  * @since 2018/6/20
  */
-public class ParallelDataLoaderV2 extends DataLoaderV2 {
+public class ParallelDataLoaderV2Take extends DataLoaderV2 {
 
     protected void doLoad() {  // 并行计算
 
-        long result1 = 0, result2 = 0, result3 = 0;
-
         ExecutorService executorService = Executors.newFixedThreadPool(3); // 创建线程池
         CompletionService completionService = new ExecutorCompletionService(executorService);
-        completionService.submit(super::loadConfigurations, null);      //  耗时 >= 1s
-        completionService.submit(super::loadUsers, null);               //  耗时 >= 2s
-        completionService.submit(super::loadOrders, null);              //  耗时 >= 3s
 
-//        int count = 0;
-//        while (count < 3) { // 等待三个任务完成
-//            if (completionService.poll() != null) {
-//                count++;
-//            }
-//        }
+        completionService.submit(new Callable() {
+            @Override
+            public Object call() throws Exception {
+                return loadConfigurations();
+            }
+        });
+
+        completionService.submit(new Callable() {
+            @Override
+            public Object call() throws Exception {
+                return loadUsers();
+            }
+        });
+
+        completionService.submit(new Callable() {
+            @Override
+            public Object call() throws Exception {
+                return loadOrders();
+            }
+        });
 
         executorService.shutdown();
 
@@ -46,7 +54,7 @@ public class ParallelDataLoaderV2 extends DataLoaderV2 {
     }  // 总耗时 max(1s, 2s, 3s)  >= 3s
 
     public static void main(String[] args) {
-        new ParallelDataLoaderV2().load();
+        new ParallelDataLoaderV2Take().load();
     }
 
 }
